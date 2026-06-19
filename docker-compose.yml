@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: upimesh-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: upimesh
+      POSTGRES_USER: upimesh
+      POSTGRES_PASSWORD: upimesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - upimesh-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U upimesh -d upimesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: upimesh-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: upimesh
+      DB_USER: upimesh
+      DB_PASSWORD: upimesh
+    ports:
+      - "8080:8080"
+
+volumes:
+  upimesh-pgdata:
